@@ -109,11 +109,11 @@ contract FlashArbitrage is IUniswapV3SwapCallback {
 
         // Process the next hop or complete the sequence
         if (data.hasNextHop()) {
-            executeArbitrageHop(amountToPayInThisHop, data.decodeHop(), data);
-
-            // Pay the owed amount to the pool
-            IERC20(tokenIn).transfer(msg.sender, amountToPayInThisHop);
+            executeArbitrageHop(amountToPayInThisHop, data.decodeHop(), data);            
         }
+
+        // Pay the owed amount to the pool
+        IERC20(tokenIn).transfer(msg.sender, amountToPayInThisHop);
     }
 
     /// @dev Callback for Uniswap V2 swaps
