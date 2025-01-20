@@ -8,7 +8,7 @@ import "./libraries/ArbitrageRequestDecoder.sol";
 import "./libraries/TickMath.sol";
 import "./token/ERC20/IERC20.sol";
 
-contract FlashArbitrage is IUniswapV3SwapCallback {
+contract FlashArbitrageExecutor is IUniswapV3SwapCallback {
     using ArbitrageRequestDecoder for bytes;
 
     address public immutable WETH;

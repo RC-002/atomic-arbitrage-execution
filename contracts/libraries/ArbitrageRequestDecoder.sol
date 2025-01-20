@@ -29,7 +29,7 @@ library ArbitrageRequestDecoder {
     /// @return minIncreaseInWeth The minimum WETH balance increase expected
     /// @return hop The decoded first hop data (pool type, direction, address)
     function decodeFirstHop(bytes calldata data)
-        external
+        internal
         pure
         returns (uint256 amountIn, uint256 minIncreaseInWeth, Hop memory hop)
     {
