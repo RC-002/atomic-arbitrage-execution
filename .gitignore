@@ -1,1 +1,4 @@
 rust/target/*
+node_modules/
+artifacts/*
+cache/*
