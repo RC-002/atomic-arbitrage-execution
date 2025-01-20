@@ -49,34 +49,17 @@ contract FlashArbitrage is IUniswapV3SwapCallback {
 
     /// @notice Executes an arbitrage sequence with flash swaps
     /// @param data Encoded data for the arbitrage
-    function executeArbitrage(bytes calldata data) external onlyWhitelisted {
-        (uint256 amountIn, uint256 minIncreaseInWeth, ArbitrageRequestDecoder.Hop memory firstHop) = data.decodeFirstHop();
-
-        // Find WETH balance before swaps
+    function executeAtomicArbitrageSwap(bytes calldata data) external onlyWhitelisted {
         uint256 balanceBeforeArbitrageSwaps = IERC20(WETH).balanceOf(address(this));
 
-        if (firstHop.isV3) {
-            IUniswapV3Pool(firstHop.poolAddress).swap(
-                address(this),
-                firstHop.direction,
-                int256(amountIn),
-                firstHop.direction ? type(uint160).max : 0,
-                data
-            );
-        } else {
-            IUniswapV2Pair(firstHop.poolAddress).swap(
-                firstHop.direction ? 0 : amountIn,
-                firstHop.direction ? amountIn : 0,
-                address(this),
-                data
-            );
-        }
+        // Decode and execute the first hop
+        (uint256 amountIn, uint256 minIncreaseInWeth, ArbitrageRequestDecoder.Hop memory firstHop) = data.decodeFirstHop();
+        executeArbitrageHop(amountIn, firstHop, data, 32 + 21);
 
-        // Find WETH balance after swaps
         uint256 balanceAfterArbitrageSwaps = IERC20(WETH).balanceOf(address(this));
 
         // Ensure the WETH balance increased by at least `minIncreaseInWeth`
-        require(balanceAfterArbitrageSwaps - balanceBeforeArbitrageSwaps >= minWethOut, "Arbitrage did not meet profit requirement");
+        require(balanceAfterArbitrageSwaps >= balanceBeforeArbitrageSwaps + minIncreaseInWeth, "Arbitrage did not meet profit requirement");
     }
 
     /// @dev Callback for Uniswap V3 swaps
@@ -89,16 +72,16 @@ contract FlashArbitrage is IUniswapV3SwapCallback {
         require(msg.sender == hop.poolAddress, "Invalid callback sender");
 
         address tokenIn = hop.direction ? IUniswapV3Pool(msg.sender).token1() : IUniswapV3Pool(msg.sender).token0();
-        uint256 amountToPay = uint256(hop.direction ? amount1Delta : amount0Delta);
+        uint256 amountToPayInThisHop = uint256(hop.direction ? amount1Delta : amount0Delta);
+        uint256 amountInForNextHop = uint256(hop.direction ? amount0Delta : amount1Delta);
 
-        // Process next hop or complete the sequence
-        (, bool hasMoreHops) = data.processNextHop();
-        if (!hasMoreHops) {
-            IERC20(tokenIn).transfer(msg.sender, amountToPay);
-        } else {
-            // Recursive call for the next hop
-            executeArbitrage(data);
+        // Process the next hop or complete the sequence
+        if (data.hasNextHop(32)) {
+            executeArbitrageHop(amountInForNextHop, data.decodeHop(53), data, 53 + 21);
         }
+
+        // Pay the owed amount to the pool
+        IERC20(tokenIn).transfer(msg.sender, amountToPayInThisHop);
     }
 
     /// @dev Callback for Uniswap V2 swaps
@@ -114,15 +97,43 @@ contract FlashArbitrage is IUniswapV3SwapCallback {
         require(msg.sender == hop.poolAddress, "Invalid callback sender");
 
         address tokenIn = hop.direction ? IUniswapV2Pair(msg.sender).token1() : IUniswapV2Pair(msg.sender).token0();
-        uint256 amountToPay = hop.direction ? amount1 : amount0;
+        uint256 amountToPayInThisHop = hop.direction ? amount1 : amount0;
+        uint256 amountInForNextHop = hop.direction ? amount0 : amount1;
 
-        // Process next hop or complete the sequence
-        (, bool hasMoreHops) = data.processNextHop();
-        if (!hasMoreHops) {
-            IERC20(tokenIn).transfer(msg.sender, amountToPay);
+        // Process the next hop or complete the sequence
+        if (data.hasNextHop(32)) {
+            executeArbitrageHop(amountInForNextHop, data.decodeHop(53), data, 53 + 21);
+        }
+
+        // Pay the owed amount to the pool
+        IERC20(tokenIn).transfer(msg.sender, amountToPayInThisHop);
+    }
+
+    /// @dev Executes an arbitrage hop
+    /// @param amountIn Amount of tokens to input
+    /// @param hop Hop details
+    /// @param nextHopData Data for subsequent hops
+    function executeArbitrageHop(
+        uint256 amountIn,
+        ArbitrageRequestDecoder.Hop memory hop,
+        bytes calldata nextHopData,
+        uint256 /* offset */ // Unused parameter removed to silence warning
+    ) internal {
+        if (hop.isV3) {
+            IUniswapV3Pool(hop.poolAddress).swap(
+                address(this),
+                hop.direction,
+                int256(amountIn),
+                hop.direction ? type(uint160).max : 0,
+                nextHopData
+            );
         } else {
-            // Recursive call for the next hop
-            executeArbitrage(data);
+            IUniswapV2Pair(hop.poolAddress).swap(
+                hop.direction ? 0 : amountIn,
+                hop.direction ? amountIn : 0,
+                address(this),
+                nextHopData
+            );
         }
     }
 
