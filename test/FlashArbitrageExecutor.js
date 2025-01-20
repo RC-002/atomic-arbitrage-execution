@@ -21,7 +21,17 @@ describe("FlashArbitrageExecutor", function () {
 
   describe("Deployment", function () {
 
-    it("Should be able to whitelist an address", async function () {
+    it("Safe/Owner Should not be able to whitelist the contract itself", async function () {
+
+      const { flashArbitrageExecutor, owner } = await loadFixture(deployConractAndSetVariables);
+
+      expect(await flashArbitrageExecutor.addToWhitelist(flashArbitrageExecutor))
+      .to.revertedWith("Invalid address")
+
+    });
+    
+    
+    it("Safe/Owner Should be able to whitelist an EOA", async function () {
 
       const [_, signer1] = await ethers.getSigners();
       const { flashArbitrageExecutor, owner } = await loadFixture(deployConractAndSetVariables);
@@ -30,5 +40,21 @@ describe("FlashArbitrageExecutor", function () {
       .to.emit(flashArbitrageExecutor, "Whitelisted")
       .withArgs(signer1, true);
     });
+
+
+    it("Safe/Owner Should be able to remove an EOA from the whitelist", async function () {
+
+      const [_, signer1] = await ethers.getSigners();
+      const { flashArbitrageExecutor, owner } = await loadFixture(deployConractAndSetVariables);
+
+      // add the EOA to the whitelist
+      await flashArbitrageExecutor.addToWhitelist(signer1)
+
+      // remove from whitelist
+      expect(await flashArbitrageExecutor.removeFromWhitelist(signer1))
+      .to.emit(flashArbitrageExecutor, "Whitelisted")
+      .withArgs(signer1, false);
+    });
+
   });
 });
