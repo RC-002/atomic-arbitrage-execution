@@ -5,7 +5,8 @@ import "./interfaces/IUniswapV2Pair.sol";
 import "./interfaces/IUniswapV3Pool.sol";
 import "./interfaces/IUniswapV3SwapCallback.sol";
 import "./libraries/ArbitrageRequestDecoder.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./libraries/TickMath.sol";
+import "./token/ERC20/IERC20.sol";
 
 contract FlashArbitrage is IUniswapV3SwapCallback {
     using ArbitrageRequestDecoder for bytes;
@@ -54,7 +55,36 @@ contract FlashArbitrage is IUniswapV3SwapCallback {
 
         // Decode and execute the first hop
         (uint256 amountIn, uint256 minIncreaseInWeth, ArbitrageRequestDecoder.Hop memory firstHop) = data.decodeFirstHop();
-        executeArbitrageHop(amountIn, firstHop, data, 32 + 21);
+
+        // Slice out and concatenate data[:16] and data[32:]
+        bytes memory arbitrageHopCalldata = new bytes(data.length - 16);
+        assembly {
+            let offset32 := add(data.offset, 32) // Skip the first 32 bytes
+            let offset16 := data.offset // Start at the beginning (0 bytes)
+
+            let length32 := sub(data.length, 32) // Length of data[32:]
+            let length16 := 16 // Length of data[:16]
+
+            // Allocate memory for the result
+            let result := add(arbitrageHopCalldata, 32)
+            let resultLength := add(length32, length16)
+
+            // Copy data[32:] into result
+            for { let i := 0 } lt(i, length32) { i := add(i, 32) } {
+                mstore(add(result, i), calldataload(add(offset32, i)))
+            }
+
+            // Copy data[:16] into result after data[32:]
+            for { let i := 0 } lt(i, length16) { i := add(i, 32) } {
+                mstore(add(result, add(length32, i)), calldataload(add(offset16, i)))
+            }
+
+            // Update the free memory pointer
+            mstore(0x40, add(result, add(resultLength, 32)))
+        }
+
+
+        executeArbitrageHop(amountIn + minIncreaseInWeth, firstHop, arbitrageHopCalldata); // Slice the first 32 bytes of calldata
 
         uint256 balanceAfterArbitrageSwaps = IERC20(WETH).balanceOf(address(this));
 
@@ -68,20 +98,22 @@ contract FlashArbitrage is IUniswapV3SwapCallback {
         int256 amount1Delta,
         bytes calldata data
     ) external override {
-        ArbitrageRequestDecoder.Hop memory hop = data.decodeHop(32); // First hop starts after 32 bytes
+        ArbitrageRequestDecoder.Hop memory hop = data.decodeHop(); // Decode the next hop
         require(msg.sender == hop.poolAddress, "Invalid callback sender");
 
-        address tokenIn = hop.direction ? IUniswapV3Pool(msg.sender).token1() : IUniswapV3Pool(msg.sender).token0();
-        uint256 amountToPayInThisHop = uint256(hop.direction ? amount1Delta : amount0Delta);
-        uint256 amountInForNextHop = uint256(hop.direction ? amount0Delta : amount1Delta);
+        address tokenIn = hop.direction ? IUniswapV3Pool(msg.sender).token0() : IUniswapV3Pool(msg.sender).token1();
+        uint256 amountToPayInThisHop = amount1Delta > 0 ? uint256(amount1Delta) : uint256(amount0Delta);
+
+        // Slice out the used part (21 bytes for the hop)
+        data = data[21:];
 
         // Process the next hop or complete the sequence
-        if (data.hasNextHop(32)) {
-            executeArbitrageHop(amountInForNextHop, data.decodeHop(53), data, 53 + 21);
-        }
+        if (data.hasNextHop()) {
+            executeArbitrageHop(amountToPayInThisHop, data.decodeHop(), data);
 
-        // Pay the owed amount to the pool
-        IERC20(tokenIn).transfer(msg.sender, amountToPayInThisHop);
+            // Pay the owed amount to the pool
+            IERC20(tokenIn).transfer(msg.sender, amountToPayInThisHop);
+        }
     }
 
     /// @dev Callback for Uniswap V2 swaps
@@ -93,44 +125,47 @@ contract FlashArbitrage is IUniswapV3SwapCallback {
     ) external {
         require(sender == address(this), "Unauthorized caller");
 
-        ArbitrageRequestDecoder.Hop memory hop = data.decodeHop(32); // First hop starts after 32 bytes
+        ArbitrageRequestDecoder.Hop memory hop = data.decodeHop(); // Decode the next hop
         require(msg.sender == hop.poolAddress, "Invalid callback sender");
 
-        address tokenIn = hop.direction ? IUniswapV2Pair(msg.sender).token1() : IUniswapV2Pair(msg.sender).token0();
+        address tokenIn = hop.direction ? IUniswapV2Pair(msg.sender).token0() : IUniswapV2Pair(msg.sender).token1();
         uint256 amountToPayInThisHop = hop.direction ? amount1 : amount0;
-        uint256 amountInForNextHop = hop.direction ? amount0 : amount1;
+
+        // Slice out the used part (21 bytes for the hop)
+        data = data[21:];
 
         // Process the next hop or complete the sequence
-        if (data.hasNextHop(32)) {
-            executeArbitrageHop(amountInForNextHop, data.decodeHop(53), data, 53 + 21);
+        if (data.hasNextHop()) {
+            executeArbitrageHop(amountToPayInThisHop, data.decodeHop(), data);
+        } else {
+            amountToPayInThisHop = data.decodeU128data();
         }
-
+        
         // Pay the owed amount to the pool
         IERC20(tokenIn).transfer(msg.sender, amountToPayInThisHop);
     }
 
     /// @dev Executes an arbitrage hop
-    /// @param amountIn Amount of tokens to input
+    /// @param amountOut Amount of tokens that we receive from the swap
     /// @param hop Hop details
     /// @param nextHopData Data for subsequent hops
     function executeArbitrageHop(
-        uint256 amountIn,
+        uint256 amountOut,
         ArbitrageRequestDecoder.Hop memory hop,
-        bytes calldata nextHopData,
-        uint256 /* offset */ // Unused parameter removed to silence warning
+        bytes memory nextHopData
     ) internal {
         if (hop.isV3) {
             IUniswapV3Pool(hop.poolAddress).swap(
                 address(this),
                 hop.direction,
-                int256(amountIn),
-                hop.direction ? type(uint160).max : 0,
+                - int256(amountOut), // This is now an exactOutput swap
+                hop.direction ? TickMath.MIN_SQRT_RATIO + 1 : TickMath.MAX_SQRT_RATIO - 1,
                 nextHopData
             );
         } else {
             IUniswapV2Pair(hop.poolAddress).swap(
-                hop.direction ? 0 : amountIn,
-                hop.direction ? amountIn : 0,
+                hop.direction ? 0 : amountOut,
+                hop.direction ? amountOut : 0,
                 address(this),
                 nextHopData
             );
