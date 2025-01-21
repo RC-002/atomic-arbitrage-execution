@@ -1,9 +1,9 @@
 // Token addresses
-TETHER_ADDRESS= '0x0165878A594ca255338adfa4d48449f69242Eb8F'
+WETH_ADDRESS= '0x0165878A594ca255338adfa4d48449f69242Eb8F'
 USDC_ADDRESS= '0xa513E6E4b8f2a923D98304ec87F64353C4D5C853'
 
 // Uniswap contract address
-WETH_ADDRESS= '0x5FbDB2315678afecb367f032d93F642f64180aa3'
+USDT_ADDRESS= '0x5FbDB2315678afecb367f032d93F642f64180aa3'
 FACTORY_ADDRESS= '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512'
 SWAP_ROUTER_ADDRESS= '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0'
 NFT_DESCRIPTOR_ADDRESS= '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9'
@@ -62,13 +62,13 @@ async function deployPool(token0, token1, fee, price) {
 
 
 async function main() {
-  const usdtUsdc500 = await deployPool(TETHER_ADDRESS, USDC_ADDRESS, 500, encodePriceSqrt(1, 1))
-  const usdtUsdc3000 = await deployPool(TETHER_ADDRESS, USDC_ADDRESS, 3000, encodePriceSqrt(1, 2))
-  const usdtUsdc10000 = await deployPool(TETHER_ADDRESS, USDC_ADDRESS, 10000, encodePriceSqrt(2, 1))
+  const wethUsdc500 = await deployPool(WETH_ADDRESS, USDC_ADDRESS, 500, encodePriceSqrt(1, 1))
+  const wethUsdc3000 = await deployPool(WETH_ADDRESS, USDC_ADDRESS, 3000, encodePriceSqrt(1, 2))
+  const wethUsdc10000 = await deployPool(WETH_ADDRESS, USDC_ADDRESS, 10000, encodePriceSqrt(2, 1))
 
-  console.log('USDT_USDC_500=', `'${usdtUsdc500}'`)
-  console.log('USDT_USDC_3000=', `'${usdtUsdc3000}'`)
-  console.log('USDT_USDC_10000=', `'${usdtUsdc10000}'`)
+  console.log('WETH_USDC_500=', `'${wethUsdc500}'`)
+  console.log('WETH_USDC_3000=', `'${wethUsdc3000}'`)
+  console.log('WETH_USDC_10000=', `'${wethUsdc10000}'`)
 }
 
 /*

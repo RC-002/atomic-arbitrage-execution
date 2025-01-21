@@ -1,7 +1,7 @@
 
 
 const { Contract, ContractFactory, utils, BigNumber } = require("ethers")
-const WETH9 = require("../WETH9.json")
+const USDT9 = require("../USDT.json")
 
 const artifacts = {
   UniswapV3Factory: require("@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json"),
@@ -9,7 +9,7 @@ const artifacts = {
   NFTDescriptor: require("@uniswap/v3-periphery/artifacts/contracts/libraries/NFTDescriptor.sol/NFTDescriptor.json"),
   NonfungibleTokenPositionDescriptor: require("@uniswap/v3-periphery/artifacts/contracts/NonfungibleTokenPositionDescriptor.sol/NonfungibleTokenPositionDescriptor.json"),
   NonfungiblePositionManager: require("@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json"),
-  WETH9,
+  USDT9,
 };
 
 const linkLibraries = ({ bytecode, linkReferences }, libraries) => {
@@ -40,14 +40,14 @@ const linkLibraries = ({ bytecode, linkReferences }, libraries) => {
 async function main() {
   const [owner] = await ethers.getSigners();
 
-  Weth = new ContractFactory(artifacts.WETH9.abi, artifacts.WETH9.bytecode, owner);
-  weth = await Weth.deploy();
+  USDT = new ContractFactory(artifacts.USDT9.abi, artifacts.USDT9.bytecode, owner);
+  USDT = await USDT.deploy();
 
   Factory = new ContractFactory(artifacts.UniswapV3Factory.abi, artifacts.UniswapV3Factory.bytecode, owner);
   factory = await Factory.deploy();
 
   SwapRouter = new ContractFactory(artifacts.SwapRouter.abi, artifacts.SwapRouter.bytecode, owner);
-  swapRouter = await SwapRouter.deploy(factory.address, weth.address);
+  swapRouter = await SwapRouter.deploy(factory.address, USDT.address);
 
   NFTDescriptor = new ContractFactory(artifacts.NFTDescriptor.abi, artifacts.NFTDescriptor.bytecode, owner);
   nftDescriptor = await NFTDescriptor.deploy();
@@ -72,12 +72,12 @@ async function main() {
   );
 
   NonfungibleTokenPositionDescriptor = new ContractFactory(artifacts.NonfungibleTokenPositionDescriptor.abi, linkedBytecode, owner);
-  nonfungibleTokenPositionDescriptor = await NonfungibleTokenPositionDescriptor.deploy(weth.address);
+  nonfungibleTokenPositionDescriptor = await NonfungibleTokenPositionDescriptor.deploy(USDT.address);
 
   NonfungiblePositionManager = new ContractFactory(artifacts.NonfungiblePositionManager.abi, artifacts.NonfungiblePositionManager.bytecode, owner);
-  nonfungiblePositionManager = await NonfungiblePositionManager.deploy(factory.address, weth.address, nonfungibleTokenPositionDescriptor.address);
+  nonfungiblePositionManager = await NonfungiblePositionManager.deploy(factory.address, USDT.address, nonfungibleTokenPositionDescriptor.address);
 
-  console.log('WETH_ADDRESS=', `'${weth.address}'`)
+  console.log('USDT_ADDRESS=', `'${USDT.address}'`)
   console.log('FACTORY_ADDRESS=', `'${factory.address}'`)
   console.log('SWAP_ROUTER_ADDRESS=', `'${swapRouter.address}'`)
   console.log('NFT_DESCRIPTOR_ADDRESS=', `'${nftDescriptor.address}'`)

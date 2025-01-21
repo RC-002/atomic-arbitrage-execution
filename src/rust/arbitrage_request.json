@@ -1,18 +1,19 @@
 [
     {
-    "pool_type": "uniswap_v2",
-    "pool_address": "0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc",
-    "amount_in": "1000000000000000000",
-    "amount_out": "3500000000",
-    "token_in": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-    "token_out": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+      "pool_type": "uniswap_v3",
+      "pool_address": "0x1FA8DDa81477A5b6FA1b2e149e93ed9C7928992F",
+      "amount_in": "1000000",
+      "amount_out": "995000",
+      "token_in": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+      "token_out": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
     },
     {
-    "pool_type": "uniswap_v3",
-    "pool_address": "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640",
-    "amount_in": "3500000000",
-    "amount_out": "1001000000000000000",
-    "token_in": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    "token_out": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+      "pool_type": "uniswap_v3",
+      "pool_address": "0x3B00F82071576B8489A6e3df223dcC0e937841d1",
+      "amount_in": "995000",
+      "amount_out": "1001000",
+      "token_in": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+      "token_out": "0x0165878A594ca255338adfa4d48449f69242Eb8F"
     }
-]   
+  ]
+  

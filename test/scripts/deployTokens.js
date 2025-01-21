@@ -1,13 +1,13 @@
 async function main() {
   const [owner, signer2] = await ethers.getSigners();
 
-  Tether = await ethers.getContractFactory('Tether', owner);
-  tether = await Tether.deploy();
+  WrappedETH = await ethers.getContractFactory('WrappedETH', owner);
+  weth = await WrappedETH.deploy();
 
   Usdc = await ethers.getContractFactory('UsdCoin', owner);
   usdc = await Usdc.deploy();
 
-  await tether.connect(owner).mint(
+  await weth.connect(owner).mint(
     owner.address,
     ethers.utils.parseEther('100000')
   )
@@ -16,7 +16,7 @@ async function main() {
     ethers.utils.parseEther('100000')
   )
 
-  console.log('TETHER_ADDRESS=', `'${tether.address}'`)
+  console.log('WETH_ADDRESS=', `'${weth.address}'`)
   console.log('USDC_ADDRESS=', `'${usdc.address}'`)
 }
 

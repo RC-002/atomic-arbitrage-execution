@@ -1,4 +1,4 @@
-// Load ethers from the `contracts` directory
+// Load ethers from the `src` directory
 const path = require("path");
 const { createRequire } = require("module");
 
