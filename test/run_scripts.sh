@@ -18,6 +18,7 @@ commands=(
   "npx hardhat run --network localhost scripts/deployPools.js"
   "npx hardhat run --network localhost scripts/addLiquidity.js"
   "npx hardhat run --network localhost scripts/checkLiquidity.js"
+  "npx hardhat run --network localhost scripts/flashArbitrageSwap.js"
 )
 
 # Iterate over commands and execute them sequentially
