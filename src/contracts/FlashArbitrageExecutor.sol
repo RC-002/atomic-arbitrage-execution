@@ -3,12 +3,13 @@ pragma solidity ^0.8.19;
 
 import "./interfaces/IUniswapV2Pair.sol";
 import "./interfaces/IUniswapV3Pool.sol";
+import "./interfaces/IUniswapV2Callee.sol";
 import "./interfaces/IUniswapV3SwapCallback.sol";
 import "./libraries/ArbitrageRequestDecoder.sol";
 import "./libraries/TickMath.sol";
 import "./token/ERC20/IERC20.sol";
 
-contract FlashArbitrageExecutor is IUniswapV3SwapCallback {
+contract FlashArbitrageExecutor is IUniswapV3SwapCallback, IUniswapV2Callee {
     using ArbitrageRequestDecoder for bytes;
 
     address public immutable WETH;
@@ -54,35 +55,7 @@ contract FlashArbitrageExecutor is IUniswapV3SwapCallback {
         uint256 balanceBeforeArbitrageSwaps = IERC20(WETH).balanceOf(address(this));
 
         // Decode and execute the first hop
-        (uint256 amountIn, uint256 minIncreaseInWeth, ArbitrageRequestDecoder.Hop memory firstHop) = data.decodeFirstHop();
-
-        // Slice out and concatenate data[:16] and data[32:]
-        bytes memory arbitrageHopCalldata = new bytes(data.length - 16);
-        assembly {
-            let offset32 := add(data.offset, 32) // Skip the first 32 bytes
-            let offset16 := data.offset // Start at the beginning (0 bytes)
-
-            let length32 := sub(data.length, 32) // Length of data[32:]
-            let length16 := 16 // Length of data[:16]
-
-            // Allocate memory for the result
-            let result := add(arbitrageHopCalldata, 32)
-            let resultLength := add(length32, length16)
-
-            // Copy data[32:] into result
-            for { let i := 0 } lt(i, length32) { i := add(i, 32) } {
-                mstore(add(result, i), calldataload(add(offset32, i)))
-            }
-
-            // Copy data[:16] into result after data[32:]
-            for { let i := 0 } lt(i, length16) { i := add(i, 32) } {
-                mstore(add(result, add(length32, i)), calldataload(add(offset16, i)))
-            }
-
-            // Update the free memory pointer
-            mstore(0x40, add(result, add(resultLength, 32)))
-        }
-
+        (uint256 amountIn, uint256 minIncreaseInWeth, ArbitrageRequestDecoder.Hop memory firstHop, bytes memory arbitrageHopCalldata) = data.decodeFirstHop();
 
         executeArbitrageHop(amountIn + minIncreaseInWeth, firstHop, arbitrageHopCalldata); // Slice the first 32 bytes of calldata
 
