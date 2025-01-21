@@ -1,5 +1,24 @@
-rust/target/*
+# Rust build artifacts
+src/rust/target/
+
+# Node.js dependencies and artifacts
 src/node_modules/
-src/artifacts/*
-src/cache/*
-src/rust/target/*
+src/artifacts/
+src/cache/
+
+# Test-related dependencies and artifacts
+test/node_modules/
+test/artifacts/
+test/cache/
+
+# General OS / editor-specific files
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*.swo
+
+# Ignore environment files
+.env
+.env.local
+.env.*

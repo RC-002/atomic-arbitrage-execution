@@ -1,0 +1,9 @@
+{
+    "name": "atomic-arbitrage-execution",
+    "private": true,
+    "workspaces": [
+      "src",
+      "test"
+    ]
+  }
+  
