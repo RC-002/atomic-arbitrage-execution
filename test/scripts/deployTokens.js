@@ -21,7 +21,7 @@ async function main() {
 }
 
 /*
-npx hardhat run --network localhost scripts/02_deployTokens.js
+npx hardhat run --network localhost scripts/deployTokens.js
 */
 
 

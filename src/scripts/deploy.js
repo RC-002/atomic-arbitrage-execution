@@ -1,10 +1,18 @@
+// Load ethers from the `contracts` directory
+const path = require("path");
+const { createRequire } = require("module");
+
+// Dynamically load ethers from the contracts package.json
+const contractsRequire = createRequire(path.resolve(__dirname, "./../package.json"));
+
+
 // We require the Hardhat Runtime Environment explicitly here. This is optional
 // but useful for running the script in a standalone fashion through `node <script>`.
 //
 // You can also run a script with `npx hardhat run <script>`. If you do that, Hardhat
 // will compile your contracts, add the Hardhat Runtime Environment's members to the
 // global scope, and execute the script.
-const hre = require("hardhat");
+const hre = contractsRequire("hardhat");
 
 async function main() {
   // Load environment variables

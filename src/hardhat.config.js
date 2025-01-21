@@ -1,5 +1,12 @@
-require("@nomicfoundation/hardhat-toolbox");
-require('dotenv').config({ path: __dirname + '/.env' })
+// Load ethers from the `contracts` directory
+const path = require("path");
+const { createRequire } = require("module");
+
+// Dynamically load ethers from the contracts package.json
+const contractsRequire = createRequire(path.resolve(__dirname, "./package.json"));
+
+contractsRequire("@nomicfoundation/hardhat-toolbox");
+contractsRequire('dotenv').config({ path: __dirname + '/.env' })
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
