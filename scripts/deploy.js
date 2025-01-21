@@ -11,8 +11,6 @@ async function main() {
   const WETH = process.env.WETH_ADDRESS;
   const SAFE_EOA = process.env.SAFE_EOA;
 
-  console.log(process.env);
-
   if (!WETH || !SAFE_EOA) {
     throw new Error("Please set WETH_ADDRESS and SAFE_EOA in your environment variables.");
   }
