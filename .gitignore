@@ -1,5 +1,5 @@
 rust/target/*
-node_modules/
-artifacts/*
-cache/*
-.env
+src/node_modules/
+src/artifacts/*
+src/cache/*
+src/rust/target/*
