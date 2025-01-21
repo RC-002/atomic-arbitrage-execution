@@ -7,23 +7,28 @@
 const hre = require("hardhat");
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
+  // Load environment variables
+  const WETH = process.env.WETH_ADDRESS;
+  const SAFE_EOA = process.env.SAFE_EOA;
 
-  const lockedAmount = hre.ethers.parseEther("0.001");
+  console.log(process.env);
 
-  const lock = await hre.ethers.deployContract("Lock", [unlockTime], {
-    value: lockedAmount,
-  });
+  if (!WETH || !SAFE_EOA) {
+    throw new Error("Please set WETH_ADDRESS and SAFE_EOA in your environment variables.");
+  }
 
-  await lock.waitForDeployment();
+  // Deploy the FlashArbitrageExecutor contract
+  console.log("Deploying FlashArbitrageExecutor...");
+  const flashArbitrageExecutor = await hre.ethers.deployContract("FlashArbitrageExecutor", [WETH, SAFE_EOA]);
+
+  // Wait for the deployment to complete
+  await flashArbitrageExecutor.waitForDeployment();
 
   console.log(
-    `Lock with ${ethers.formatEther(
-      lockedAmount
-    )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.target}`
+    `FlashArbitrageExecutor deployed at: ${flashArbitrageExecutor.target}`
   );
 }
+
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
