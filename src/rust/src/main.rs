@@ -1,27 +1,18 @@
-use std::fs;
-use serde_json;
+// main.rs
+use std::path::Path;
 
 mod helpers;
-use helpers::arbitrage_request::ArbitrageRequest;
-use helpers::encoder;
+use helpers::parser::process_arbitrage_requests;
 
 fn main() {
-    let file_path = "arbitrage_request.json";
-    let data = fs::read_to_string(file_path).expect("Failed to read file");
+    let requests_dir = "arbitrage_requests"; // Input directory
+    let encodings_dir = "arbitrage_encodings"; // Output directory
 
-    // Deserialize the JSON into a vector of requests
-    let requests: Vec<ArbitrageRequest> =
-        serde_json::from_str(&data).expect("Error parsing JSON");
-
-    // Encode the arbitrage request into a string
-    match encoder::encode_arbitrage_request(requests) {
-        Ok(encoded_data) => {
-            // Print the encoded data in hex format (as a string)
-            println!("Encoded Data (in Hex): 0x{}", encoded_data);
-        }
-        Err(e) => {
-            // Handle error if the encoding fails
-            eprintln!("Error encoding arbitrage request: {}", e);
-        }
+    // Ensure the encodings directory exists
+    if !Path::new(encodings_dir).exists() {
+        std::fs::create_dir(encodings_dir).expect("Failed to create encodings directory");
     }
+
+    // Process arbitrage requests from the input directory
+    process_arbitrage_requests(requests_dir, encodings_dir);
 }
