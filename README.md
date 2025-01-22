@@ -123,7 +123,26 @@ An arbitrage request should follow this format:
 ```
 ---
 
-## 8. License
+## 9. To-do:
+
+If given more time, I believe the following features would significantly enhance the functionality:
+
+### 1. Verify the Correctness of the Arbitrage Request:
+- **Pool Existence Check**:
+    - Ensure that the pool with the given address exists on the platform.
+- **Token Match Verification**:
+    - Call the token0() and token1() methods for the given pool address and confirm that the provided token addresses match the actual tokens in the pool.
+
+### 2. Validate the Feasibility of the Arbitrage Opportunity:
+- **Preemptive Arbitrage Check**:
+    - Instead of waiting until the final stages to check for arbitrage feasibility, perform a preliminary check earlier in the process to determine if there is a true arbitrage opportunity.
+- **Price Quote Validation**:
+    - Query the quoter for each pool and check if, for a given amount_in, the resulting amount_out aligns with the expected values based on the current liquidity and market conditions. This will ensure that arbitrage opportunities are genuinely profitable before any gas is spent on executing the transaction.
+
+
+---
+
+## 10. License
 
 This project is licensed under the MIT License.
 
