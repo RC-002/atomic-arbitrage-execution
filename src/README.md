@@ -1,5 +1,5 @@
 
-# Running the Project
+# Understanding and running the Project
 
 ## Deploying the Contract
 
