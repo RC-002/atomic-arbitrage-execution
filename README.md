@@ -97,6 +97,7 @@ This reverse execution and stack-based transfer mechanism ensures atomicity and 
 ![Contract Flow](content/contract_flow.png "Contract Flow")
 
 Note: A more detailed explination of how the contract processes requests is explained in [```src/README```](https://github.com/RC-002/atomic-arbitrage-execution/tree/main/src#4-in-depth-flow-of-the-contract)
+
 ---
 
 ## 7. Input JSON Format
