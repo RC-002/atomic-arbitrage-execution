@@ -7,6 +7,7 @@ import "./interfaces/IUniswapV2Callee.sol";
 import "./interfaces/IUniswapV3SwapCallback.sol";
 import "./libraries/ArbitrageRequestDecoder.sol";
 import "./libraries/TickMath.sol";
+import "./libraries/UniswapV2Library.sol";
 import "./token/ERC20/IERC20.sol";
 
 contract FlashArbitrageExecutor is IUniswapV3SwapCallback, IUniswapV2Callee {
@@ -55,9 +56,10 @@ contract FlashArbitrageExecutor is IUniswapV3SwapCallback, IUniswapV2Callee {
         uint256 balanceBeforeArbitrageSwaps = IERC20(WETH).balanceOf(address(this));
 
         // Decode and execute the first hop
-        (uint256 amountIn, uint256 minIncreaseInWeth, ArbitrageRequestDecoder.Hop memory firstHop, bytes memory arbitrageHopCalldata) = data.decodeFirstHop();
+        (uint256 amountIn, uint256 minIncreaseInWeth, ArbitrageRequestDecoder.Hop memory firstHop) = data.decodeFirstHop();
+        data = data[32:]; // slice the first 32 bytes because they are already decoded
 
-        executeArbitrageHop(amountIn + minIncreaseInWeth, firstHop, arbitrageHopCalldata); // Slice the first 32 bytes of calldata
+        executeArbitrageHop(amountIn + minIncreaseInWeth, firstHop, data); // Slice the first 32 bytes of calldata
 
         uint256 balanceAfterArbitrageSwaps = IERC20(WETH).balanceOf(address(this));
 
@@ -102,7 +104,7 @@ contract FlashArbitrageExecutor is IUniswapV3SwapCallback, IUniswapV2Callee {
         require(msg.sender == hop.poolAddress, "Invalid callback sender");
 
         address tokenIn = hop.direction ? IUniswapV2Pair(msg.sender).token0() : IUniswapV2Pair(msg.sender).token1();
-        uint256 amountToPayInThisHop = hop.direction ? amount1 : amount0;
+        uint256 amountToPayInThisHop = findUniswapV2AmountIn(msg.sender, amount0, amount1, hop.direction);
 
         // Slice out the used part (21 bytes for the hop)
         data = data[21:];
@@ -110,8 +112,6 @@ contract FlashArbitrageExecutor is IUniswapV3SwapCallback, IUniswapV2Callee {
         // Process the next hop or complete the sequence
         if (data.hasNextHop()) {
             executeArbitrageHop(amountToPayInThisHop, data.decodeHop(), data);
-        } else {
-            amountToPayInThisHop = data.decodeU128data();
         }
         
         // Pay the owed amount to the pool
@@ -149,6 +149,55 @@ contract FlashArbitrageExecutor is IUniswapV3SwapCallback, IUniswapV2Callee {
     function isWhitelisted(address account) external view returns (bool) {
         return whitelist[account];
     }
+
+
+    /// @notice Calculates the required input amount for a Uniswap V2 swap given the output amount and pool reserves
+    /// @dev Determines the reserves and calculates the input amount using the UniswapV2Library
+    /// @param pool The address of the Uniswap V2 pair contract
+    /// @param amount0 The amount of token0 to be swapped (used when zeroForOne is false)
+    /// @param amount1 The amount of token1 to be swapped (used when zeroForOne is true)
+    /// @param zeroForOne Indicates the direction of the swap (true for token0 -> token1, false for token1 -> token0)
+    /// @return amountIn The calculated input amount required to execute the swap
+    function findUniswapV2AmountIn(address pool, uint256 amount0, uint256 amount1, bool zeroForOne) internal view returns (uint256 amountIn) {
+
+        // Decode reserves from the pool
+        uint112 reserve0;
+        uint112 reserve1;
+        (reserve0, reserve1, ) = IUniswapV2Pair(pool).getReserves();
+
+        uint reserveIn;
+        uint reserveOut;
+        uint amountOut;
+
+        // Assign reserves and output amount based on the direction of the swap
+        if (zeroForOne) {
+            reserveIn = uint(reserve0);
+            reserveOut = uint(reserve1);
+            amountOut = uint(amount1);
+        } else {
+            reserveIn = uint(reserve1);
+            reserveOut = uint(reserve0);
+            amountOut = uint(amount0);
+        }
+
+        // Use the UniswapV2Library to calculate the input amount
+        amountIn = UniswapV2Library.getAmountIn(amountOut, reserveIn, reserveOut);
+    }
+
+
+    /// @notice Transfers all WETH held by this contract to the safe address
+    /// @dev Can only be called by the safe address due to the `onlySafe` modifier
+    function redeemWETH() external onlySafe {
+        // Get the WETH balance of this contract
+        uint256 wethBalance = IERC20(WETH).balanceOf(address(this));
+
+        // Ensure there is some balance to transfer
+        require(wethBalance > 0, "redeemWETH: No WETH balance to redeem");
+
+        // Transfer the entire WETH balance to the safe
+        IERC20(WETH).transfer(msg.sender, wethBalance);
+    }
+
 
     /// @dev Emitted when an address is added to or removed from the whitelist
     event Whitelisted(address indexed account, bool isWhitelisted);
