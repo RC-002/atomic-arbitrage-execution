@@ -89,6 +89,70 @@ whitelistEOA();
 - Confirm that all parameters in the `.env` file are correctly set before deployment.
 
 
+### 4. In-Depth Flow of the Contract
+
+This section explains how the contract processes an arbitrage request step-by-step:
+
+#### **1. Whitelisting Check**
+- The contract begins by verifying if the sender of the transaction is whitelisted.
+- If the sender is not whitelisted, the request is reverted immediately.
+
+#### **2. Record Initial WETH Balance**
+- If the sender is whitelisted, the contract notes the initial WETH balance of the contract, denoted as `balanceBeforeArbitrageSwaps`.
+
+#### **3. Decode Arbitrage Request Parameters**
+- The calldata is decoded to extract:
+  - `amountIn`: The initial input amount for the arbitrage.
+  - `minIncreaseInWeth`: The minimum acceptable profit in WETH for the arbitrage to proceed.
+  - `firstHop`: The starting pool for the arbitrage sequence.
+- **Key Detail:** The contract processes the swaps in reverse order, meaning the swap method of the last pool in the arbitrage sequence is called first.
+
+#### **4. Processing Each Pool in the Arbitrage Sequence**
+For each pool in the arbitrage request, the following steps are executed based on the type of pool:
+
+##### **4.1 If the Pool is a Uniswap V3 Pool**
+- Call the `swap` method of the Uniswap V3 pool.
+- The pool transfers the `amountOut` in `tokenOut` to the contract and triggers the callback `uniswapV3SwapCallback` with:
+  - `amountIn`
+  - `amountOut`
+  - The calldata provided in the request.
+- Inside the callback:
+  - Decode the current hop.
+  - Verify that `msg.sender` matches the pool address to prevent spoofing.
+- Remove the current hop from the calldata by slicing 21 bytes.
+- If there is a next hop, call the `swap` method of the next pool.
+- If this is the last pool in the sequence, pay the `amountIn` in `tokenIn` owed to the pool.
+
+##### **4.2 If the Pool is a Uniswap V2 Pool**
+- Call the `swap` method of the Uniswap V2 pool.
+- The pool transfers the `amountOut` in `tokenOut` to the contract and triggers the callback `uniswapV2Call` with:
+  - `amountOut`
+  - The calldata provided in the request.
+- Inside the callback:
+  - Decode the current hop.
+  - Verify that `msg.sender` matches the pool address to ensure authenticity.
+- Remove the current hop from the calldata by slicing 21 bytes.
+- Calculate the `amountIn` owed to the pool:
+  - Fetch the pool reserves.
+  - Use the Uniswap V2 library's `getAmountIn` function to compute the required `amountIn` based on the reserves and the already transferred `amountOut`.
+  - **Note:** The reserves are updated after the swap, ensuring the correct `amountIn`.
+- If there is a next hop, call the `swap` method of the next pool.
+- If this is the last pool, pay the `amountIn` owed to the pool.
+
+##### **Important Note:**
+- The next pool is always called in the callback of the current pool.
+- Only in the final pool’s callback does the contract start settling the owed amounts.
+- This ensures that the required `amountIn` for each pool is always available during execution.
+- The callback of the first pool is returned last, completing the entire sequence.
+
+#### **5. Final Balance Validation**
+- After all swaps are completed, the contract computes its final WETH balance (`balanceAfterArbitrageSwaps`).
+- It verifies that the profit (`balanceAfterArbitrageSwaps - balanceBeforeArbitrageSwaps`) exceeds the `minIncreaseInWeth` specified in the request.
+- If this condition is not met, the transaction reverts to prevent unprofitable or erroneous arbitrage execution.
+
+---
+ 
+
 
 ## Off-Chain Component - The RUST Code
 
@@ -158,3 +222,36 @@ cargo run -q
 ```json
 {"chain":"mainnet","encoded_calldata":"0x0000000000000000000000003b9aca0000000000000000000de44432108fb600c088e6a0c2ddd26feeb64f039a2c41296fcb3f564000b4e16d0168e52d35cacd2c6185b44281ec28c9dc"}
 ```
+
+### 4. High-Level Overview of the Code Flow and Modules
+
+This project encodes arbitrage requests into calldata for blockchain execution. It is designed in a modular way to keep the code structured, efficient, and easy to extend. Below is a concise explanation of each module:
+
+##### 1. `main.rs` - Entry Point
+- **Purpose:** Manages directory setup and initiates request processing.
+- **Flow:**
+  - Ensures `encodings_dir` and `test_encodings_dir` exist.
+  - Calls `process_arbitrage_requests` from the `parser` module.
+
+
+##### 2. `helpers/arbitrage_request.rs` - Struct Definition
+- **Purpose:** Defines the `ArbitrageRequest` structure with fields:
+  - `pool_type`, `pool_address`, `amount_in`, `amount_out`, `token_in`, `token_out`.
+
+
+##### 3. `helpers/encoder.rs` - Encoding Logic
+- **Purpose:** Encodes arbitrage requests into calldata.
+- **Flow:**
+  - Validates `amount_in` and `amount_out` and calculates WETH profit.
+  - Encodes:
+    - `amount_in` and profit as 128-bit hex.
+    - Pool details (type, direction, address) in reverse order.
+  - Returns a hex-encoded calldata string.
+
+
+##### 4. `helpers/parser.rs` - File Processing
+- **Purpose:** Processes input JSON files and writes encoded output.
+- **Flow:**
+  - Reads requests from `requests_dir` and deserializes JSON.
+  - Encodes requests using `encoder::encode_arbitrage_request`.
+  - Writes output JSON with chain and calldata to the appropriate directory.

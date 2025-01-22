@@ -127,7 +127,7 @@ An arbitrage request should follow this format:
 
 ## 9. To-do:
 
-If given more time, I believe the following features would significantly enhance the functionality:
+I believe the following features would significantly enhance the functionality:
 
 ### 1. Verify the Correctness of the Arbitrage Request:
 - **Pool Existence Check**:
