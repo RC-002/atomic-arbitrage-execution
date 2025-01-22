@@ -64,7 +64,7 @@ contract FlashArbitrageExecutor is IUniswapV3SwapCallback, IUniswapV2Callee {
         uint256 balanceAfterArbitrageSwaps = IERC20(WETH).balanceOf(address(this));
 
         // Ensure the WETH balance increased by at least `minIncreaseInWeth`
-        require(balanceAfterArbitrageSwaps >= balanceBeforeArbitrageSwaps + minIncreaseInWeth, "Arbitrage did not meet profit requirement");
+        require(balanceAfterArbitrageSwaps - balanceBeforeArbitrageSwaps >= minIncreaseInWeth, "Arbitrage did not meet profit requirement");
     }
 
     /// @dev Callback for Uniswap V3 swaps
