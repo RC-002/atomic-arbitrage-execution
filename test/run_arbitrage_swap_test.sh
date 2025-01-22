@@ -13,11 +13,6 @@ run_command() {
 
 # List of commands to execute
 commands=(
-  "npx hardhat run --network localhost scripts/deployContracts.js"
-  "npx hardhat run --network localhost scripts/deployTokens.js"
-  "npx hardhat run --network localhost scripts/deployPools.js"
-  "npx hardhat run --network localhost scripts/addLiquidity.js"
-  "npx hardhat run --network localhost scripts/checkLiquidity.js"
   "npx hardhat run --network localhost scripts/flashArbitrageSwap.js"
 )
 

@@ -20,9 +20,17 @@
 
 
 ## 3. Running the test
-- Execute the ```run_scripts.sh``` script to run the entire test suite:
+
+1. **Setup**:
+- Execute the ```run_setup_script.sh``` script to setup the necessary tokens, pools and also deploy our FlashArbitrage contract
 ```bash
-./run_scripts.sh
+./run_setup_script.sh
+```
+
+2. **Running the arbitrage test**
+- Execute the ```run_arbitrage_script.sh``` script to run the test suite.
+```bash
+./run_arbitrage_script.sh
 ```
 
 ### 3.1 Sample Logs:
