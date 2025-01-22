@@ -54,12 +54,12 @@ The `test/` directory includes:
 
 ## 4. Running the project
 
-Please open the ```src``` directory for a detailed description of how to run the project
+Please open the ```src``` directory for a [detailed description of how to run the project](https://github.com/RC-002/atomic-arbitrage-execution/blob/main/src/README.md)
 ---
 
 ## 5. Testing the project
 
-Please open the ```test``` directory for a detailed description of how to run the project
+Please open the ```test``` directory for a [detailed description of how to run the project](https://github.com/RC-002/atomic-arbitrage-execution/blob/main/test/README.md)
 ---
 
 ## 6. High-Level Flow

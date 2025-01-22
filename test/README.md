@@ -11,7 +11,7 @@
    ```bash
    npx hardhat node
    ```
-3. Deploy the contract on the local Hardhat network. Refer to the steps in the``` /src/README.md``` file.
+3. Deploy the contract on the local Hardhat network. Refer to the steps in the [``` /src/README.md``` file](https://github.com/RC-002/atomic-arbitrage-execution/blob/main/src/README.md).
 4. Add a new request in the arbitrage_requests folder within the /rust directory.
     - Ensure the chain field in your JSON request is set to "localhost".
     - Run the Rust code to encode the request.
