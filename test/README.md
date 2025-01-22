@@ -108,3 +108,5 @@ All commands executed successfully!
     - The encoded request from the test/arbitrage_encodings directory is passed to the executeAtomicArbitrageSwap method.
     - The contract executes the flash swap, completing the arbitrage.
 - **Final Balance Check**: After the swap, the signer's WETH balance increases, indicating a successful arbitrage.
+
+*reference for the [tests](https://gist.github.com/BlockmanCodes/d0068cfc56ab67925dfd4b854ffea8fc)*
