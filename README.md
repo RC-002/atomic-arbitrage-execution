@@ -141,6 +141,17 @@ If given more time, I believe the following features would significantly enhance
 - **Price Quote Validation**:
     - Query the quoter for each pool and check if, for a given amount_in, the resulting amount_out aligns with the expected values based on the current liquidity and market conditions. This will ensure that arbitrage opportunities are genuinely profitable before any gas is spent on executing the transaction.
 
+### 3. Create a transcation and submit it to the block builders:
+  - **Current State**:
+    - Currently, the Rust code is designed to encode the request into bytes for calldata, preparing the transaction for submission.
+  - **Proposed Extension**:
+    - We can enhance this functionality by also encoding the entire transaction, not just the request, and making an RPC call to simulate the transaction.
+    - This simulation step will allow us to validate the transaction’s feasibility before actual submission, ensuring no errors or failures during execution.
+  - **Transaction Submission**:
+    - If the simulation passes successfully, the next step will involve submitting the encoded transaction to block builders for inclusion in the blockchain.
+    - We need to ensure the system properly communicates with block builders, following the necessary protocols to finalize and add the transaction to the blockchain.
+
+
 
 ---
 
