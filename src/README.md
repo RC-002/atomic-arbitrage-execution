@@ -11,6 +11,8 @@ Before deploying the contract, it's essential to understand the following:
 4. **Gas Costs**: The whitelisted EOA must have ETH to pay for gas fees but does not need any WETH balance. The contract allows swaps with no starting capital!
 5. **Assert arbitrage**: The contract asserts that the WETH profit is greater than or equals to the expected minimum output amount
 
+---
+
 ### 2. Steps to Deploy
 1. **Install Dependencies**:
    Ensure you have Hardhat and all npm dependencies installed.
@@ -45,6 +47,8 @@ Before deploying the contract, it's essential to understand the following:
    ```bash
    npx hardhat run scripts/deploy.js --network localhost
    ```
+
+---
 
 ### 3. Whitelisting an EOA
 1. **Call the `addToWhitelist` Method**:
@@ -88,6 +92,7 @@ whitelistEOA();
 - Only the whitelisted EOA can execute swaps after being authorized.
 - Confirm that all parameters in the `.env` file are correctly set before deployment.
 
+---
 
 ### 4. In-Depth Flow of the Contract
 
@@ -153,11 +158,14 @@ For each pool in the arbitrage request, the following steps are executed based o
 ---
  
 
+---
 
 ## Off-Chain Component - The RUST Code
 
 ### 1. Understanding the Code
 The arbitrage request, written in a human-readable JSON format, needs to be encoded into bytecode to be processed by the `FlashArbitrageExecutor` smart contract. This encoding is handled by the Rust program, which takes the JSON input and outputs the encoded calldata ready for deployment.
+
+---
 
 ### 2. Dependencies
 Ensure you have Rust installed and the following dependencies added to your `Cargo.toml` file:
@@ -169,6 +177,8 @@ hex = "0.4.3"
 serde = { version = "1.0.217", features = ["derive"] }
 serde_json = "1.0.137"
 ```
+
+---
 
 ### 3. Using the code
 
@@ -222,6 +232,8 @@ cargo run -q
 ```json
 {"chain":"mainnet","encoded_calldata":"0x0000000000000000000000003b9aca0000000000000000000de44432108fb600c088e6a0c2ddd26feeb64f039a2c41296fcb3f564000b4e16d0168e52d35cacd2c6185b44281ec28c9dc"}
 ```
+
+---
 
 ### 4. High-Level Overview of the Code Flow and Modules
 

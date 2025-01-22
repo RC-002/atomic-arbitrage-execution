@@ -95,6 +95,8 @@ This reverse execution and stack-based transfer mechanism ensures atomicity and 
 
 4. Consider the below Json as the input. This is how the contract would work
 ![Contract Flow](content/contract_flow.png "Contract Flow")
+
+Note: A more detailed explination of how the contract processes requests is explained in [```src/README```](https://github.com/RC-002/atomic-arbitrage-execution/tree/main/src#4-in-depth-flow-of-the-contract)
 ---
 
 ## 7. Input JSON Format
@@ -125,7 +127,7 @@ An arbitrage request should follow this format:
 ```
 ---
 
-## 9. To-do:
+## 8. To-do:
 
 I believe the following features would significantly enhance the functionality:
 
@@ -155,7 +157,7 @@ I believe the following features would significantly enhance the functionality:
 
 ---
 
-## 10. License
+## 9. License
 
 This project is licensed under the MIT License.
 
