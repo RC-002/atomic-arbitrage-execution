@@ -9,6 +9,7 @@ Before deploying the contract, it's essential to understand the following:
 2. **Whitelisting**: Only the SAFE EOA can whitelist other EOAs (Externally Owned Accounts) to execute swaps.
 3. **Swapping**: Once whitelisted, an EOA can call the `executeAtomicArbitrageSwap` method to perform arbitrage swaps.
 4. **Gas Costs**: The whitelisted EOA must have ETH to pay for gas fees but does not need any WETH balance. The contract allows swaps with no starting capital!
+5. **Assert arbitrage**: The contract asserts that the WETH profit is greater than or equals to the expected minimum output amount
 
 ### 2. Steps to Deploy
 1. **Install Dependencies**:
@@ -140,6 +141,14 @@ serde_json = "1.0.137"
 ```bash
 cargo run -q
 ```
+5. **Encoding rules**:
+- 128-bits uint indicating the exact input amount of WETH for the first swap
+- 128-bits uint indicating the expected minimum increase in WETH balance (gross profit from above)
+- Remaining bits data to be passed when calling flash swap (see below)
+    - 1-bit as the selector (0 for UniswapV2-like pool, 1 for UniswapV3-like pool)
+    - 1-bit as the direction (0 for selling token0 of the pool, 1 for selling token1 of the pool)
+    - 160-bits as the pool address to perform the swap against
+    The data for multiple hops should be packed sequentially.
 
 #### 3.2 Retrieving the Output Encodings
 - If your request was for the mainnet, the encoded data will be saved in the ```arbitrage_encodings``` directory within ```/rust```.
